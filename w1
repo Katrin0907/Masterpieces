@@ -1,0 +1,104 @@
+import neurokit2 as nk
+import hrv
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+from hrv.classical import time_domain
+from hrv.io import read_from_text
+
+data = pd.read_csv('C:/aristova-2.csv', delimiter = ",", header=0)
+
+from hrv.classical import time_domain
+from hrv.io import read_from_text
+
+
+print(data)
+#data.head()
+
+d=data["ECG"]
+
+# Find peaks
+peaks, info = nk.ecg_peaks(d[1000:22000], sampling_rate=100)
+
+# Compute HRV indices
+nk.hrv(peaks, sampling_rate=100, show=True)
+
+# Extract clean EDA and SCR features
+hrv_time = nk.hrv_time(peaks, sampling_rate=100, show=True)
+hrv_time
+
+
+
+from hrv.classical import time_domain
+from hrv.io import read_from_text 
+Brri=info["ECG_R_Peaks"]
+results = time_domain(Brri)
+print(results)
+
+
+
+import pyhrv
+fbands1 = {'ulf': (0.0, 0.003), 'vlf': (0.003, 0.04), 'lf': (0.04, 0.15), 'hf': (0.15, 0.4)}
+
+import biosppy
+import pyhrv.frequency_domain as fd
+dfValues = peaks['ECG_R_Peaks'].values
+pyhrv.frequency_domain.lomb_psd(nni=Brri, fbands=fbands1, nfft=2**8, ma_size=None, show=True, show_param=True, legend=True)
+
+
+hrv_freq = nk.hrv_frequency(peaks, sampling_rate=100, show=True)
+hrv_freq
+
+
+
+d2 = data["EDA"].tolist()
+dd2 = np.array(d2, dtype=np.float)
+
+
+from sklearn import preprocessing
+import numpy as np
+
+d8 = dd2[np.logical_not(np.isnan(dd2))]
+ar = preprocessing.normalize([d8])
+
+
+m8=nk.eda_clean(d8, sampling_rate=100, method='neurokit')
+m88=nk.eda_phasic(d8, sampling_rate=100, method='biopac')
+
+
+
+
+m8_8= nk.eda_process(m8, sampling_rate=100)
+indexes_posada = nk.eda_sympathetic(m8, sampling_rate=100, method='posada', show=True)
+
+
+d3 = data["RSP"].tolist()
+dd3 = np.array(d3, dtype=np.float)
+
+d7 = dd3[np.logical_not(np.isnan(dd3))]
+ar7 = preprocessing.normalize([d7])
+
+dat = pd.Series(ar7[0])
+df1, info1=nk.rsp_process(dat, sampling_rate=100)
+r1_1=nk.rsp_intervalrelated(df1) 
+
+
+
+d4 = data["EEG"].tolist()
+dd4 = np.array(d4, dtype=np.float)
+
+d9 = dd4[np.logical_not(np.isnan(dd4))]
+ar9 = preprocessing.normalize([d9])
+
+da = pd.Series(ar9[0])
+
+
+power = nk.signal_power(da, frequency_band=[(0.1, 4), (4, 8), (8, 12), (12, 30)], sampling_rate=100, continuous=True)
+
+psd=nk.signal_psd(da, sampling_rate=100, method='welch', show=True, normalize=True, min_frequency=0.1, max_frequency=30, window=0.3, window_type='hann', order=16, order_criteria='KIC', order_corrected=True)
+
+
+med1=np.median(m88["EDA_Tonic"])
+med2=np.median(m88["EDA_Phasic"])
