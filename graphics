@@ -1,0 +1,150 @@
+
+y <- read.csv(file = "C:/Health_AnimalBites.csv", header = TRUE)
+
+
+#preprocessing data 
+result <- y[(y$SpeciesIDDesc %in% c("CAT", "DOG")), ]
+result <- result[(result$GenderIDDesc %in% c("MALE", "FEMALE")), ]
+result <- result[!(result$bite_date %in% c(0, NA, "")), ]
+result$victim_zip <- as.numeric(result$victim_zip) 
+result <- result[!(result$victim_zip %in% c(0, NA, "")),  ]
+library(lubridate)
+result$bite_date <- as.POSIXlt(result$bite_date) 
+res<-result$bite_date
+year(res[1:4669])
+result <- result[(year(result$bite_date[1:4669]) %in% seq(2010,2018,1)),  ]
+
+
+#finding frequencies
+result1 <- result[(result$SpeciesIDDesc %in% "CAT"), ]
+result1 <- result1[(result1$GenderIDDesc %in% "FEMALE"), ]
+s1<-sum(result1["victim_zip"])
+
+result2 <- result[(result$SpeciesIDDesc %in% "CAT"), ]
+result2 <- result2[(result2$GenderIDDesc %in% "MALE"), ]
+s2<-sum(result2["victim_zip"])
+
+result3 <- result[(result$SpeciesIDDesc %in% "DOG"), ]
+result3 <- result3[(result3$GenderIDDesc %in% "FEMALE"), ]
+s3<-sum(result3["victim_zip"])
+
+result4 <- result[(result$SpeciesIDDesc %in% "DOG"), ]
+result4 <- result4[(result4$GenderIDDesc %in% "MALE"), ]
+s4<-sum(result4["victim_zip"])
+
+
+#data for visualization
+vec_dog_fem <- vector()
+vec_dog_mal <- vector()
+vec_cat_fem <- vector()
+vec_cat_mal <- vector()
+
+
+i<-1
+while(i <= 12){
+        
+        
+        
+        assign(paste("mon",toString(i),sep ="_"), result[(month(result$bite_date[1:4669])) %in% toString(i), ])
+        na<-assign(paste("mon",toString(i),sep ="_"), result[(month(result$bite_date[1:4669])) %in% toString(i), ])
+        assign(paste0("mon",toString(i),sep ="_","cat"), na[(na$SpeciesIDDesc %in% "CAT"),])
+        assign(paste0("mon",toString(i),sep ="_","dog"), na[(na$SpeciesIDDesc %in% "DOG"),])
+  
+        na_cat<-assign(paste0("mon",toString(i),sep ="_","cat"), na[(na$SpeciesIDDesc %in% "CAT"),])
+        na_dog<-assign(paste0("mon",toString(i),sep ="_","dog"), na[(na$SpeciesIDDesc %in% "DOG"),])
+  
+        assign(paste0("mon",toString(i),sep ="_","dog_fem"), na_dog[(na_dog$GenderIDDesc %in% "FEMALE"), ])
+        na_dog_fem<-assign(paste0("mon",toString(i),sep ="_","dog_fem"), na_dog[(na_dog$GenderIDDesc %in% "FEMALE"), ])
+        assign(paste0("mon",toString(i),sep ="_","sum"), sum(na_dog_fem["victim_zip"]))
+ 
+        na_dog_fem_proportion<-assign(paste0("mon",toString(i),sep ="_","proportion"),(sum(na_dog_fem["victim_zip"])/s3))
+        vec_dog_fem<-c( vec_dog_fem, na_dog_fem_proportion)
+  
+        assign(paste0("mon",toString(i),sep ="_","dog_fem"), na_dog[(na_dog$GenderIDDesc %in% "MALE"), ])
+        na_dog_mal<-assign(paste0("mon",toString(i),sep ="_","dog_mal"), na_dog[(na_dog$GenderIDDesc %in% "MALE"), ])
+  
+        na_dog_mal_proportion<-assign(paste0("mon",toString(i),sep ="_","proportion"),(sum(na_dog_mal["victim_zip"])/s4))
+        vec_dog_mal<-c(vec_dog_mal, na_dog_mal_proportion)
+  
+        assign(paste0("mon",toString(i),sep ="_","cat_fem"), na_cat[(na_cat$GenderIDDesc %in% "FEMALE"), ])
+        na_cat_fem<-assign(paste0("mon",toString(i),sep ="_","cat_fem"), na_cat[(na_cat$GenderIDDesc %in% "FEMALE"), ])
+
+        na_cat_fem_proportion<-assign(paste0("mon",toString(i),sep ="_","proportion"),(sum(na_cat_fem["victim_zip"])/s1))
+        vec_cat_fem<-c(vec_cat_fem, na_cat_fem_proportion)
+  
+        assign(paste0("mon",toString(i),sep ="_","cat_fem"), na_dog[(na_dog$GenderIDDesc %in% "MALE"), ])
+        na_cat_mal<-assign(paste0("mon",toString(i),sep ="_","cat_mal"), na_cat[(na_cat$GenderIDDesc %in% "MALE"), ])
+  
+        na_cat_mal_proportion<-assign(paste0("mon",toString(i),sep ="_","proportion"),(sum(na_cat_mal["victim_zip"])/s2))
+        vec_cat_mal<-c(vec_cat_mal, na_cat_mal_proportion)
+  
+   
+  i <- i + 1
+}
+
+months<-c("янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек")
+dl<-cbind(months, vec_cat_fem, vec_cat_mal, vec_dog_fem, vec_dog_mal)
+df <- data.frame(dl) 
+
+#visualization
+library(ggplot2) 
+
+p1<-ggplot(df, aes(x = months, y=as.numeric(vec_cat_fem))) +
+  geom_col(width = 0.9) +
+  coord_polar(start = 0, direction =1)+
+  theme_light()+
+  xlab(NULL) + 
+  ylab(NULL)+
+  scale_x_discrete(limits=c("янв","фев","мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт","ноя", "дек"))+
+  scale_y_continuous(limits=c(0, 0.16), breaks=seq(0.000,0.125,0.025))+
+  labs( subtitle = "caмки")
+
+p2<-ggplot(df, aes(x = months, y=as.numeric(vec_cat_mal))) +
+  geom_col(width = 0.9) +
+  coord_polar(start = 0, direction = 1)+
+  theme_light()+
+  xlab(NULL) + 
+  ylab(NULL)+
+  theme(axis.text.y=element_blank())+
+  scale_x_discrete(limits=c("янв","фев","мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт","ноя", "дек"))+
+  scale_y_continuous(name="кошки", position="right", limits=c(0, 0.125), breaks=seq(0.000,0.125,0.025))+
+  labs(subtitle = "caмцы")
+
+
+p3<-ggplot(df, aes(x = months, y=as.numeric(vec_dog_fem))) +
+  geom_col(width = 0.9) +
+  coord_polar(start =0, direction = 1)+
+  theme_light()+
+  xlab(NULL) + 
+  ylab(NULL)+
+  scale_x_discrete(limits=c("янв","фев","мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт","ноя", "дек"))+
+  scale_y_continuous(limits=c(0, 0.125), breaks=seq(0.000,0.125,0.025))
+
+p4<-ggplot(df, aes(x = months, y=as.numeric(vec_dog_mal))) +
+  geom_col(width = 0.9) +
+  coord_polar(start =0, direction = 1)+
+  theme_light()+
+  xlab(NULL) + 
+  ylab(NULL)+
+  theme(axis.text.y=element_blank())+
+  scale_x_discrete(limits=c("янв","фев","мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт","ноя", "дек"))+
+  scale_y_continuous(name="собаки", position="right", limits=c(0, 0.125), breaks=seq(0.000,0.125,0.025))
+
+
+library(ggpubr)
+
+figure <- ggarrange(p1, p2, p3, p4,
+                    ncol = 2, nrow = 2)
+
+
+figure<- annotate_figure(figure,
+                top = text_grob("Сообщения об укусах животных рядом с Луисвиллом (Кентукки) между 
+                                                2010 и 2018 года", size = 12),
+
+                bottom = text_grob("данные из www.kaggle.com/rtatman/animal-bites", hjust = 1, x = 0.85, size = 9.5),
+                left = "доля укусов на каждый из месяцев",
+                fig.lab = "Об укусах животных чаще сообщают весной и летом"
+)
+
+plot(figure)
+
