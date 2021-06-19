@@ -1,0 +1,48 @@
+library(xlsx)
+
+y <- read.xlsx("C:/Results/final_tabl.xls", 1)
+
+y$physiology<- as.numeric(y$physiology)
+y$questionnaire <- as.numeric(y$questionnaire)
+y$behaviour <- as.factor(y$behaviour)
+y$Result <- as.factor(y$Result)
+
+#quantile(y$physiology, prob = c(0.25, 0.75))
+
+cor(y$physiology,y$questionnaire, method = "spearman")
+cor.test(y$physiology,y$questionnaire, method = "spearman") 
+
+
+library (stats)
+fit2<-glm(Result ~ questionnaire + physiology + behaviour, y, family="binomial")
+coef(fit2)
+summary(fit2)
+y$prob <- predict (object = fit2, type = 'response')
+exp(coef(fit2))
+
+library(ROCR)
+pred_fit <- prediction (y$prob,y$Result)
+perf_fit <- performance (pred_fit, "tpr", "fpr")
+plot(perf_fit, colorize = T, print.cutoffs.at = seq (0, 1, by=0.1))
+
+
+auc <- performance(pred_fit, measure = "auc")
+str(auc)
+
+perf3 <- performance (pred_fit, x.measure = "cutoff", measure = "spec")
+perf4 <- performance (pred_fit, x.measure = "cutoff", measure = "sens")
+perf5 <- performance (pred_fit, x.measure = "cutoff", measure = "accur")
+
+plot (perf3, col="red", lwd =2, xlab="Вероятность", ylab="Специфичность")
+plot(add=T, perf4, col="green", lwd=2)
+plot (add=T, perf5, lwd=2)
+
+legend (x=0.3 , y=0.6, c("специфичность", "чувствительность", "точность"),
+        lty = 1, col = c ("red", "green", "black"), bty = "n", cex= 1, lwd = 2)
+
+
+abline (v=0.31, lwd = 2)
+y$pred_resp <- factor (ifelse (y$prob > 0.32,1, 0), labels = c ("0", "1"))
+
+library("writexl")
+write_xlsx(y,"C:/Results/ex1_res.xlsx")
